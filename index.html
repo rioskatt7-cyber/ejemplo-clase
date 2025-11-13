@@ -1,41 +1,178 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Demo de Seguridad - Ejemplo Inseguro</title>
+  <meta charset="UTF-8" />
+  <title>Comprobador de contraseñas comprometidas</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+    }
+
+    /* Barra superior oscura */
+    .top-bar {
+      background: #050816;
+      height: 80px;
+      width: 100%;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 42px;
+      margin-bottom: 5px;
+    }
+
+    h2.subtitulo {
+      font-size: 22px;
+      color: #777;
+      font-weight: normal;
+      margin-top: 0;
+      margin-bottom: 40px;
+    }
+
+    .password-box {
+      margin: 0 auto 40px;
+      max-width: 700px;
+    }
+
+    #passwordInput {
+      width: 100%;
+      padding: 20px;
+      font-size: 26px;
+      border-radius: 4px;
+      border: 2px solid #000;
+      background: #c0392b;
+      color: #fff;
+      outline: none;
+    }
+
+    #passwordInput::placeholder {
+      color: #f8d7da;
+    }
+
+    #timeToCrack {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #555;
+    }
+
+    #result {
+      margin-top: 30px;
+      font-size: 20px;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+
+    .bad {
+      color: #e60000;
+      font-weight: bold;
+    }
+
+    .good {
+      color: #008000;
+      font-weight: bold;
+    }
+
+    .note {
+      margin-top: 40px;
+      font-size: 13px;
+      color: #666;
+    }
+  </style>
 </head>
-<body style="font-family: Arial; padding: 20px;">
+<body>
+  <div class="top-bar"></div>
 
-  <h1>🛑 Portal Inseguro — Ejemplo para la Clase</h1>
-  <p>Este portal contiene fallas deliberadas para demostrar riesgos de seguridad en sitios web estáticos.</p>
+  <div class="container">
+    <h1>Escribe una contraseña en esta caja</h1>
+    <h2 class="subtitulo">y descubre si ha sido comprometida</h2>
 
-  <h2>1. Fuga de información</h2>
-  <p>Correo del administrador: <strong>admin@institucion.gob.bo</strong></p>
+    <div class="password-box">
+      <input
+        id="passwordInput"
+        type="password"
+        placeholder="Escribe aquí (usa una contraseña de ejemplo, NO la tuya real)"
+        autocomplete="off"
+      />
+      <div id="timeToCrack"></div>
+    </div>
 
-  <h2>2. Script inseguro</h2>
-  <p>Este sitio carga un script externo NO confiable:</p>
-  <code>&lt;script src="http://example-malo.com/attack.js"&gt;&lt;/script&gt;</code>
+    <div id="result"></div>
 
-  <script src="http://example-malo.com/attack.js"></script>
+    <p class="note">
+      ⚠️ Esta herramienta es solo para fines educativos. No escribas aquí tu contraseña real,<br />
+      usa ejemplos como <strong>123456</strong>, <strong>qwerty</strong>, <strong>password</strong>, etc.
+    </p>
+  </div>
 
-  <h2>3. Formulario sin validación</h2>
-  <form action="#" method="GET">
-    <label>Nombre completo:</label><br>
-    <input type="text" name="nombre" placeholder="Escribe tu nombre"><br><br>
+  <script>
+    // Pequeña "base de datos" de contraseñas típicas comprometidas
+    const compromisedPasswords = {
+      "123456": 260959,
+      "password": 3300000,
+      "123456789": 1200000,
+      "qwerty": 900000,
+      "111111": 700000,
+      "abc123": 500000,
+      "12345678": 500000,
+      "000000": 400000
+    };
 
-    <label>Contraseña:</label><br>
-    <input type="password" name="pass" placeholder="12345"><br><br>
+    // Estimación (muy simplificada) del tiempo para descifrar por fuerza bruta
+    function estimateTimeToCrack(pwd) {
+      if (!pwd) return "";
+      if (pwd.length <= 4) return "instantes 😬";
+      if (pwd.length <= 6) return "unos segundos";
+      if (pwd.length <= 8) return "minutos";
+      if (pwd.length <= 10) return "horas";
+      return "mucho tiempo (¡mejor!)";
+    }
 
-    <button type="submit">Enviar (No seguro)</button>
-  </form>
+    const input = document.getElementById("passwordInput");
+    const result = document.getElementById("result");
+    const timeToCrack = document.getElementById("timeToCrack");
 
-  <h2>4. Archivo sensible expuesto</h2>
-  <p>Puedes ver este archivo directamente desde la URL:</p>
-  <a href="config.txt" target="_blank">config.txt (expuesto)</a>
+    input.addEventListener("input", () => {
+      const pwd = input.value.trim();
 
-  <p style="margin-top: 40px; font-size: 12px; color: gray;">
-    *Este sitio es solo para fines educativos.
-  </p>
+      // Mensaje sobre tiempo de fuerza bruta
+      const time = estimateTimeToCrack(pwd);
+      timeToCrack.textContent = pwd
+        ? "Averiguar tu contraseña por fuerza bruta tomaría " + time
+        : "";
 
+      if (!pwd) {
+        result.textContent = "";
+        return;
+      }
+
+      if (compromisedPasswords[pwd] !== undefined) {
+        const count = compromisedPasswords[pwd].toLocaleString("es-ES");
+        result.innerHTML =
+          `<span class="bad">Oh no! Esta contraseña se ha encontrado ${count} veces en bases de datos de sitios comprometidos.</span>\n` +
+          "Si esta es tu contraseña, deberías cambiarla inmediatamente.\n" +
+          "Usar una contraseña comprometida es extremadamente peligroso.\n\n" +
+          "Si estás usando esta contraseña en múltiples sitios, deberías usar una diferente para cada uno.";
+      } else {
+        result.innerHTML =
+          `<span class="good">¡Buen intento!</span>\n` +
+          "Esta contraseña no aparece en nuestra pequeña lista de contraseñas filtradas.\n" +
+          "Eso NO garantiza que sea segura, pero ya es mejor que usar '123456' o 'password'.\n\n" +
+          "Recuerda: usa combinaciones largas, con mayúsculas, minúsculas, números y símbolos.";
+      }
+    });
+  </script>
 </body>
 </html>
