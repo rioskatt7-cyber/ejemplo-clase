@@ -117,62 +117,86 @@
     </p>
   </div>
 
-  <script>
-    // Pequeña "base de datos" de contraseñas típicas comprometidas
-    const compromisedPasswords = {
-      "123456": 260959,
-      "password": 3300000,
-      "123456789": 1200000,
-      "qwerty": 900000,
-      "111111": 700000,
-      "abc123": 500000,
-      "12345678": 500000,
-      "000000": 400000
-    };
+<script>
+  // Aquí guardaremos contraseña -> ranking (1,2,3,...)
+  const compromisedMap = new Map();
+  let dataLoaded = false;
 
-    // Estimación (muy simplificada) del tiempo para descifrar por fuerza bruta
-    function estimateTimeToCrack(pwd) {
-      if (!pwd) return "";
-      if (pwd.length <= 4) return "instantes 😬";
-      if (pwd.length <= 6) return "unos segundos";
-      if (pwd.length <= 8) return "minutos";
-      if (pwd.length <= 10) return "horas";
-      return "mucho tiempo (¡mejor!)";
+  // Cargamos el CSV una sola vez cuando se abre la página
+  fetch('passwords.csv')
+    .then(res => res.text())
+    .then(text => {
+      const lines = text.trim().split('\n');
+
+      // La primera línea es el encabezado: "rank,password"
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line) continue;
+
+        const [rankStr, pwd] = line.split(',');
+
+        if (!pwd) continue;
+
+        const rank = parseInt(rankStr, 10);
+        compromisedMap.set(pwd.trim(), rank);
+      }
+
+      dataLoaded = true;
+      console.log('CSV cargado. Total contraseñas:', compromisedMap.size);
+    })
+    .catch(err => {
+      console.error('Error cargando passwords.csv:', err);
+    });
+
+  // Estimación (simple) del tiempo para descifrar por fuerza bruta
+  function estimateTimeToCrack(pwd) {
+    if (!pwd) return "";
+    if (pwd.length <= 4) return "instantes 😬";
+    if (pwd.length <= 6) return "unos segundos";
+    if (pwd.length <= 8) return "minutos";
+    if (pwd.length <= 10) return "horas";
+    return "mucho tiempo (¡mejor!)";
+  }
+
+  const input = document.getElementById("passwordInput");
+  const result = document.getElementById("result");
+  const timeToCrack = document.getElementById("timeToCrack");
+
+  input.addEventListener("input", () => {
+    const pwd = input.value.trim();
+
+    // Mensaje sobre tiempo de fuerza bruta
+    const time = estimateTimeToCrack(pwd);
+    timeToCrack.textContent = pwd
+      ? "Averiguar tu contraseña por fuerza bruta tomaría " + time
+      : "";
+
+    if (!pwd) {
+      result.textContent = "";
+      return;
     }
 
-    const input = document.getElementById("passwordInput");
-    const result = document.getElementById("result");
-    const timeToCrack = document.getElementById("timeToCrack");
+    if (!dataLoaded) {
+      result.innerHTML = "Cargando base de datos de contraseñas comprometidas… intenta de nuevo en un momento.";
+      return;
+    }
 
-    input.addEventListener("input", () => {
-      const pwd = input.value.trim();
-
-      // Mensaje sobre tiempo de fuerza bruta
-      const time = estimateTimeToCrack(pwd);
-      timeToCrack.textContent = pwd
-        ? "Averiguar tu contraseña por fuerza bruta tomaría " + time
-        : "";
-
-      if (!pwd) {
-        result.textContent = "";
-        return;
-      }
-
-      if (compromisedPasswords[pwd] !== undefined) {
-        const count = compromisedPasswords[pwd].toLocaleString("es-ES");
-        result.innerHTML =
-          `<span class="bad">Oh no! Esta contraseña se ha encontrado ${count} veces en bases de datos de sitios comprometidos.</span>\n` +
-          "Si esta es tu contraseña, deberías cambiarla inmediatamente.\n" +
-          "Usar una contraseña comprometida es extremadamente peligroso.\n\n" +
-          "Si estás usando esta contraseña en múltiples sitios, deberías usar una diferente para cada uno.";
-      } else {
-        result.innerHTML =
-          `<span class="good">¡Buen intento!</span>\n` +
-          "Esta contraseña no aparece en nuestra pequeña lista de contraseñas filtradas.\n" +
-          "Eso NO garantiza que sea segura, pero ya es mejor que usar '123456' o 'password'.\n\n" +
-          "Recuerda: usa combinaciones largas, con mayúsculas, minúsculas, números y símbolos.";
-      }
-    });
-  </script>
+    if (compromisedMap.has(pwd)) {
+      const rank = compromisedMap.get(pwd);
+      result.innerHTML =
+        `<span class="bad">Oh no! Esta contraseña aparece en el TOP #${rank} de contraseñas más usadas en bases de datos filtradas.</span>\n` +
+        "Si esta es tu contraseña, deberías cambiarla inmediatamente.\n" +
+        "Usar una contraseña tan común es extremadamente peligroso.\n\n" +
+        "Si estás usando esta contraseña en múltiples sitios, deberías usar una diferente para cada uno.";
+    } else {
+      result.innerHTML =
+        `<span class="good">¡Buen intento!</span>\n` +
+        "Esta contraseña no aparece en nuestra lista de contraseñas más comunes.\n" +
+        "Eso NO garantiza que sea perfecta, pero ya es mejor que usar '123456' o 'password'.\n\n" +
+        "Recuerda: usa combinaciones largas, con mayúsculas, minúsculas, números y símbolos.";
+    }
+  });
+</script>
 </body>
 </html>
+
